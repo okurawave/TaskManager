@@ -6,9 +6,8 @@ import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
-# Custom modules
-import google_sheets  # Assuming this will have a class or direct functions
 import gemini_utils
+import google_sheets  # Assuming this will have a class or direct functions
 
 # Load environment variables from .env file
 load_dotenv()
