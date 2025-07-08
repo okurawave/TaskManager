@@ -1,7 +1,10 @@
-import pytest
 import asyncio
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
 import task_bot.bot as bot
+
 
 @pytest.mark.asyncio
 async def test_handle_add_task(monkeypatch):
@@ -16,6 +19,7 @@ async def test_handle_add_task(monkeypatch):
     args = {"title": "Test Task", "due_date": "2025-07-08", "assignee": "Tester"}
     await bot.handle_add_task(message, args)
     message.channel.send.assert_called()
+
 
 @pytest.mark.asyncio
 async def test_handle_list_tasks(monkeypatch):

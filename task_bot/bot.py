@@ -1,11 +1,13 @@
+import asyncio  # Required for gemini_utils if it uses async features directly in its functions
+import os
+from datetime import datetime, timedelta
+
 import discord
 from discord.ext import commands, tasks
-import os
 from dotenv import load_dotenv
-import asyncio # Required for gemini_utils if it uses async features directly in its functions
 
 # Custom modules
-import google_sheets # Assuming this will have a class or direct functions
+import google_sheets  # Assuming this will have a class or direct functions
 import gemini_utils
 
 # Load environment variables from .env file
@@ -20,11 +22,11 @@ REMINDER_CHANNEL_ID = os.getenv("REMINDER_CHANNEL_ID")
 # Needs message content to read commands, and members to resolve user mentions if desired for assignees
 intents = discord.Intents.default()
 intents.message_content = True
-intents.members = True # If you need to map mentions to user IDs accurately or get member objects
+intents.members = True  # If you need to map mentions to user IDs accurately or get member objects
 
 # Bot prefix (can be empty if only mentions are used, but good for traditional commands too)
 # For this project, primary interaction is via mentions.
-bot = commands.Bot(command_prefix="!", intents=intents) # Prefix can be changed or removed
+bot = commands.Bot(command_prefix="!", intents=intents)  # Prefix can be changed or removed
 
 # --- Global Variables / Bot State (if necessary) ---
 # Example: worksheet instance, if you want to initialize it once
@@ -36,16 +38,16 @@ async def on_ready():
     """Called when the bot is successfully connected and ready."""
     print(f'{bot.user.name} has connected to Discord!')
     print(f'Bot ID: {bot.user.id}')
-    print(f'Successfully loaded {len(bot.commands)} commands.') # If using traditional commands
+    print(f'Successfully loaded {len(bot.commands)} commands.')  # If using traditional commands
 
     global gs_worksheet
     try:
         gs_worksheet = google_sheets.get_sheet()
-        google_sheets.init_sheet(gs_worksheet) # Ensure headers exist
+        google_sheets.init_sheet(gs_worksheet)  # Ensure headers exist
         print("Successfully connected to Google Sheets and initialized worksheet.")
     except Exception as e:
         print(f"Error connecting to Google Sheets on startup: {e}")
-        gs_worksheet = None # Ensure it's None if connection failed
+        gs_worksheet = None  # Ensure it's None if connection failed
 
     # Start any background tasks, like reminders, here
     if REMINDER_CHANNEL_ID and REMINDER_CHANNEL_ID.isdigit():
@@ -55,7 +57,7 @@ async def on_ready():
         print("REMINDER_CHANNEL_ID not set or invalid. Reminder loop not started.")
 
 
-@tasks.loop(hours=24) # Adjust timing as needed, e.g., time=datetime.time(hour=8) for 8 AM daily
+@tasks.loop(hours=24)  # Adjust timing as needed, e.g., time=datetime.time(hour=8) for 8 AM daily
 async def reminder_loop():
     """Periodically checks for upcoming tasks and sends reminders."""
     global gs_worksheet
@@ -87,7 +89,7 @@ async def reminder_loop():
 
         due_today_tasks = []
         due_tomorrow_tasks = []
-        upcoming_tasks = [] # Within 2-7 days
+        upcoming_tasks = []  # Within 2-7 days
 
         for task in tasks:
             if not task.get(google_sheets.COL_DUE_DATE):
@@ -98,7 +100,7 @@ async def reminder_loop():
                     due_today_tasks.append(task)
                 elif task_due_date == tomorrow:
                     due_tomorrow_tasks.append(task)
-                elif today < task_due_date < (today + timedelta(days=7)): # Exclude today and tomorrow, up to 6 days ahead
+                elif today < task_due_date < (today + timedelta(days=7)):  # Exclude today and tomorrow, up to 6 days ahead
                     upcoming_tasks.append(task)
             except ValueError:
                 print(f"Reminder loop: Invalid date format for task ID {task.get(google_sheets.COL_TASK_ID)}")
@@ -116,12 +118,12 @@ async def reminder_loop():
                 assignee_id = task.get(google_sheets.COL_ASSIGNEE_ID, '')
 
                 line = f"- **ID {task_id}:** {task_title}"
-                if due_date_str: # Show specific due date/time
+                if due_date_str:  # Show specific due date/time
                     line += f" (Due: {due_date_str})"
                 if assignee_id:
                     try:
                         user = await bot.fetch_user(int(assignee_id)) if assignee_id.isdigit() else None
-                        assignee_display = user.mention if user else assignee_id # Mention if possible
+                        assignee_display = user.mention if user else assignee_id  # Mention if possible
                         line += f" (Assigned: {assignee_display})"
                     except (discord.NotFound, ValueError):
                         line += f" (Assigned: {assignee_id})"
@@ -140,7 +142,7 @@ async def reminder_loop():
             reminder_message_parts.append("\n**🗓️ Upcoming (Next 7 Days):**")
             reminder_message_parts.extend(await format_task_list(upcoming_tasks))
 
-        if len(reminder_message_parts) > 1: # More than just the header
+        if len(reminder_message_parts) > 1:  # More than just the header
             full_message = "\n".join(reminder_message_parts)
             # Handle Discord message length limits
             if len(full_message) > 2000:
@@ -150,7 +152,7 @@ async def reminder_loop():
                 await channel.send(full_message)
             print("Reminder loop: Sent reminder message.")
         else:
-            print("Reminder loop: No tasks matched criteria for reminder message after grouping.")
+            print("Reminder loop: No tasks matched criteria for reminder message after grouping.")    
 
 
     except Exception as e:
@@ -168,7 +170,7 @@ async def before_reminder_loop():
 async def on_message(message: discord.Message):
     """Called when a message is sent to any channel the bot can see."""
     if message.author == bot.user:
-        return # Ignore messages from the bot itself
+        return  # Ignore messages from the bot itself
 
     # Check if the bot is mentioned
     if bot.user.mentioned_in(message):
@@ -220,7 +222,6 @@ async def on_message(message: discord.Message):
     # await bot.process_commands(message)
 
 # --- Date Helper ---
-from datetime import datetime, timedelta
 
 def parse_relative_due_date(due_date_str: str) -> str:
     """
@@ -249,25 +250,25 @@ def parse_relative_due_date(due_date_str: str) -> str:
             try:
                 # Try parsing as YYYY-MM-DD
                 dt_obj = datetime.strptime(due_date_str, "%Y-%m-%d")
-                return dt_obj.strftime("%Y-%m-%d 23:59") # Default end of day
+                return dt_obj.strftime("%Y-%m-%d 23:59")  # Default end of day
             except ValueError:
                 # If it's not a recognized relative term or format, return as is or handle error
                 # For now, returning None, assuming Gemini should mostly provide valid dates
                 # Or, if Gemini provides "evening", "morning", it should also provide the date.
                 # This function primarily handles "today", "tomorrow" and format standardization.
                 print(f"Could not parse due date string: {due_date_str}")
-                return None # Or raise an error / return original to show user
+                return None  # Or raise an error / return original to show user
 
     # For "today", "tomorrow", default to end of day if no specific time is given by Gemini
     # Gemini's spec says "YYYY-MM-DD HH:MM", so this might be redundant if Gemini is perfect.
-    time_part = "23:59" # Default time
-    if len(due_date_str_lower.split()) > 1 and ":" in due_date_str_lower: # e.g. "tomorrow 10:00"
+    time_part = "23:59"  # Default time
+    if len(due_date_str_lower.split()) > 1 and ":" in due_date_str_lower:  # e.g. "tomorrow 10:00"
         # This part is tricky if Gemini gives "tomorrow evening" vs "tomorrow 17:00"
         # Assuming Gemini's output `due_date` string will be the primary source if specific.
         # If Gemini's output is just "tomorrow", we use default end of day.
         # If Gemini's output is "tomorrow 17:00", `parse_relative_due_date` might not be called for "tomorrow"
         # This logic path is mostly for "today", "tomorrow" if Gemini passes them as such.
-        pass # Keep default time for now, rely on Gemini for specifics.
+        pass  # Keep default time for now, rely on Gemini for specifics.
 
     return target_date.strftime(f"%Y-%m-%d {time_part}")
 
@@ -281,8 +282,8 @@ async def handle_add_task(message: discord.Message, args: dict):
         return
 
     title = args.get("title")
-    due_date_str = args.get("due_date") # This is what Gemini provides
-    assignee_str = args.get("assignee") # This could be a name or a Discord mention
+    due_date_str = args.get("due_date")  # This is what Gemini provides
+    assignee_str = args.get("assignee")  # This could be a name or a Discord mention
 
     if not title:
         await message.channel.send("Please provide a title for the task.")
@@ -300,9 +301,9 @@ async def handle_add_task(message: discord.Message, args: dict):
             # For now, we'll try to use what Gemini sent if our parser fails,
             # assuming Gemini adheres to its output spec.
             # A better approach might be to validate Gemini's output format strictly here.
-            if ':' not in due_date_str and len(due_date_str) == 10: # Looks like YYYY-MM-DD
+            if ':' not in due_date_str and len(due_date_str) == 10:  # Looks like YYYY-MM-DD
                  parsed_due_date = f"{due_date_str} 23:59"
-            else: # Assume it's in the correct "YYYY-MM-DD HH:MM" or some other format we pass directly
+            else:  # Assume it's in the correct "YYYY-MM-DD HH:MM" or some other format we pass directly
                  parsed_due_date = due_date_str
 
 
@@ -310,7 +311,7 @@ async def handle_add_task(message: discord.Message, args: dict):
     assignee_id = None
     if assignee_str:
         # Check if assignee_str is a Discord mention <@USER_ID> or <@!USER_ID>
-        if message.mentions: # Check actual mentions in the message object
+        if message.mentions:  # Check actual mentions in the message object
             for user_mention in message.mentions:
                 # Check if the string Gemini picked as 'assignee' corresponds to a mentioned user
                 # This is a simple check; a more robust way would be to compare the assignee_str
@@ -331,7 +332,7 @@ async def handle_add_task(message: discord.Message, args: dict):
     try:
         task_id = google_sheets.add_task(gs_worksheet, title, assignee_id, parsed_due_date)
         response_due_date = f" (Due: {parsed_due_date})" if parsed_due_date else ""
-        response_assignee = f" for {assignee_str}" if assignee_str else "" # Use original assignee string for response
+        response_assignee = f" for {assignee_str}" if assignee_str else ""  # Use original assignee string for response
         await message.channel.send(f"✅ Task added: '{title}' (ID: {task_id}){response_assignee}{response_due_date}")
     except Exception as e:
         print(f"Error in handle_add_task: {e}")
@@ -376,7 +377,6 @@ async def handle_list_tasks(message: discord.Message, args: dict):
                 # or we decide here that only ID-based filtering is done for assignees.
                 # For now, let's assume if it's not "me" or a resolvable mention,
                 # we pass the string as is, and google_sheets will try to match it.
-                # This is consistent with how add_task stores names if not mentions.
                 target_assignee_id = assignee_filter_str # Pass the name/string
                 response_assignee_name = assignee_filter_str
 

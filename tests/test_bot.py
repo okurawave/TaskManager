@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
+
 import task_bot.bot as bot
+
 
 class TestParseRelativeDueDate(unittest.TestCase):
     def test_today(self):
@@ -22,6 +24,7 @@ class TestParseRelativeDueDate(unittest.TestCase):
     def test_invalid(self):
         result = bot.parse_relative_due_date("notadate")
         self.assertIsNone(result)
+
 
 if __name__ == "__main__":
     unittest.main()
