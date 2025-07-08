@@ -102,6 +102,10 @@ def read_tasks(worksheet, assignee_id: str = None, due_date_range: str = None, s
     due_date_range can be 'today', 'this_week', or a specific 'YYYY-MM-DD'.
     Returns a list of dictionaries, where each dictionary represents a task.
     """
+    # NOTE: This function fetches all records from the worksheet and then filters them in Python.
+    # This can lead to performance issues with a large number of tasks.
+    # Consider migrating to a more scalable database backend or implementing
+    # more efficient filtering within the Google Sheets API if future versions of gspread support it.
     try:
         all_tasks_with_headers = worksheet.get_all_records()
         if not all_tasks_with_headers:
