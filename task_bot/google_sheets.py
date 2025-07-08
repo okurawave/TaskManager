@@ -177,15 +177,15 @@ def update_task(worksheet, task_id: int, new_title: str = None, new_assignee_id:
     Returns True if update was successful, False otherwise.
     """
     try:
-        # Find the row for the task_id. Assuming task_id is unique and in the first column.
-        # gspread's find method can be slow for large sheets.
-        # A more performant way for larger sheets would be to get all task_ids and find the row index.
-        cell = worksheet.find(str(task_id), in_column=1)
-        if not cell:
+        # Retrieve all task IDs from the first column and map them to their row indices
+        task_ids = worksheet.col_values(1)  # Assuming task IDs are in the first column
+        task_id_to_row = {int(task_id): idx + 1 for idx, task_id in enumerate(task_ids) if task_id.isdigit()}
+
+        # Find the row index for the given task_id
+        row_index = task_id_to_row.get(task_id)
+        if not row_index:
             print(f"Task ID {task_id} not found for update.")
             return False
-
-        row_index = cell.row
         current_row_values = worksheet.row_values(row_index)
 
         # Create a mapping from header to index for safety, or assume fixed column order
