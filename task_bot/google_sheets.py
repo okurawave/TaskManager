@@ -67,11 +67,6 @@ def get_next_task_id(worksheet):
     except Exception as e:
         print(f"Error getting next task ID: {e}")
         raise
-            return max(numeric_ids) + 1 if numeric_ids else 1
-        except Exception as retry_error:
-            print(f"Retry failed while computing safe default ID: {retry_error}")
-            # Propagate the original error to ensure the calling function is aware
-            raise e
 
 def add_task(worksheet, title: str, assignee_id: str = None, due_date: str = None):
     """Adds a new task to the sheet.
