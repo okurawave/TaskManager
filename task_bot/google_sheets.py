@@ -65,10 +65,7 @@ def get_next_task_id(worksheet):
         return max(numeric_ids) + 1
     except Exception as e:
         print(f"Error getting next task ID: {e}")
-        # Attempt to compute a safe default ID to avoid collisions
-        try:
-            task_ids = worksheet.col_values(1)  # Retry fetching task IDs
-            numeric_ids = [int(id_val) for id_val in task_ids[1:] if id_val.isdigit()]
+        raise
             return max(numeric_ids) + 1 if numeric_ids else 1
         except Exception as retry_error:
             print(f"Retry failed while computing safe default ID: {retry_error}")
